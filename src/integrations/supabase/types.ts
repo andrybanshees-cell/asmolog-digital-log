@@ -14,16 +14,200 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          aspect_ratios: Json
+          characters: Json
+          created_at: string
+          filters: Json
+          formats: Json
+          id: string
+          lenses: Json
+          luts: Json
+          media_type: string
+          owner_id: string
+          production_name: string | null
+          resolutions: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          aspect_ratios?: Json
+          characters?: Json
+          created_at?: string
+          filters?: Json
+          formats?: Json
+          id: string
+          lenses?: Json
+          luts?: Json
+          media_type?: string
+          owner_id: string
+          production_name?: string | null
+          resolutions?: Json
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          aspect_ratios?: Json
+          characters?: Json
+          created_at?: string
+          filters?: Json
+          formats?: Json
+          id?: string
+          lenses?: Json
+          luts?: Json
+          media_type?: string
+          owner_id?: string
+          production_name?: string | null
+          resolutions?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      takes: {
+        Row: {
+          aperture: string | null
+          aspect_ratio: string | null
+          camera_roll: string | null
+          character_name: string | null
+          filter: string | null
+          format: string | null
+          fps: string | null
+          good_take: boolean
+          id: string
+          iso: string | null
+          lens: string | null
+          logged_at: string
+          lut: string | null
+          notes: string | null
+          owner_id: string
+          project_id: string
+          resolution: string | null
+          scene: string
+          shot: string
+          shutter: string | null
+          sound_roll: string | null
+          take: number
+          updated_at: string
+          wb: string | null
+        }
+        Insert: {
+          aperture?: string | null
+          aspect_ratio?: string | null
+          camera_roll?: string | null
+          character_name?: string | null
+          filter?: string | null
+          format?: string | null
+          fps?: string | null
+          good_take?: boolean
+          id: string
+          iso?: string | null
+          lens?: string | null
+          logged_at?: string
+          lut?: string | null
+          notes?: string | null
+          owner_id: string
+          project_id: string
+          resolution?: string | null
+          scene?: string
+          shot?: string
+          shutter?: string | null
+          sound_roll?: string | null
+          take?: number
+          updated_at?: string
+          wb?: string | null
+        }
+        Update: {
+          aperture?: string | null
+          aspect_ratio?: string | null
+          camera_roll?: string | null
+          character_name?: string | null
+          filter?: string | null
+          format?: string | null
+          fps?: string | null
+          good_take?: boolean
+          id?: string
+          iso?: string | null
+          lens?: string | null
+          logged_at?: string
+          lut?: string | null
+          notes?: string | null
+          owner_id?: string
+          project_id?: string
+          resolution?: string | null
+          scene?: string
+          shot?: string
+          shutter?: string | null
+          sound_roll?: string | null
+          take?: number
+          updated_at?: string
+          wb?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "takes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "dit" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +334,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "dit", "viewer"],
+    },
   },
 } as const

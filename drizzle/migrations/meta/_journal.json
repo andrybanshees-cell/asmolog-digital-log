@@ -1,5 +1,13 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790001839341,
+      "tag": "0000_asmolog_core",
+      "breakpoints": true
+    }
+  ]
 }
