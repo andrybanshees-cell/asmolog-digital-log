@@ -50,15 +50,37 @@ export interface Take {
   sync: SyncState;
 }
 
+export interface Preset {
+  id: string;
+  owner_id: string | null;
+  name: string;
+  lenses: string[];
+  filters: string[];
+  characters: string[];
+  luts: string[];
+  aspect_ratios: string[];
+  formats: string[];
+  resolutions: string[];
+  created_at: string;
+  updated_at: string;
+  sync: SyncState;
+}
+
 class AsmologDB extends Dexie {
   projects!: Table<Project, string>;
   takes!: Table<Take, string>;
+  presets!: Table<Preset, string>;
 
   constructor() {
     super("asmolog");
     this.version(1).stores({
       projects: "id, updated_at, sync",
       takes: "id, project_id, scene, shot, good_take, camera_roll, logged_at, sync",
+    });
+    this.version(2).stores({
+      projects: "id, updated_at, sync",
+      takes: "id, project_id, scene, shot, good_take, camera_roll, logged_at, sync",
+      presets: "id, name, updated_at, sync",
     });
   }
 }
