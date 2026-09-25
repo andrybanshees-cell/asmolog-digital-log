@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      metadata_presets: {
+        Row: {
+          aspect_ratios: Json
+          characters: Json
+          created_at: string
+          filters: Json
+          formats: Json
+          id: string
+          lenses: Json
+          luts: Json
+          name: string
+          owner_id: string
+          resolutions: Json
+          updated_at: string
+        }
+        Insert: {
+          aspect_ratios?: Json
+          characters?: Json
+          created_at?: string
+          filters?: Json
+          formats?: Json
+          id: string
+          lenses?: Json
+          luts?: Json
+          name?: string
+          owner_id: string
+          resolutions?: Json
+          updated_at?: string
+        }
+        Update: {
+          aspect_ratios?: Json
+          characters?: Json
+          created_at?: string
+          filters?: Json
+          formats?: Json
+          id?: string
+          lenses?: Json
+          luts?: Json
+          name?: string
+          owner_id?: string
+          resolutions?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

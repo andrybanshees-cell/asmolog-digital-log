@@ -1,5 +1,25 @@
 import { Link } from "@tanstack/react-router";
-import { Cloud, CloudOff, RefreshCw, Moon, Sun, LogOut, Aperture } from "lucide-react";
+import {
+  Cloud,
+  CloudOff,
+  RefreshCw,
+  Moon,
+  Sun,
+  LogOut,
+  Aperture,
+  Clapperboard,
+  PlusCircle,
+  Clock,
+  UserRound,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { ReactNode } from "react";
 import { ROLE_LABEL, useApp } from "@/lib/app-context";
 import { cn } from "@/lib/utils";
@@ -29,9 +49,9 @@ function StatusBadge() {
 }
 
 const TABS = [
-  { to: "/", label: "Projects" },
-  { to: "/log", label: "Log sheet" },
-  { to: "/history", label: "History" },
+  { to: "/", label: "Projects", icon: Clapperboard },
+  { to: "/log", label: "Log Sheet", icon: PlusCircle },
+  { to: "/history", label: "History", icon: Clock },
 ] as const;
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -39,8 +59,8 @@ export function Shell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+      <header className="sticky top-0 z-30 border-b border-border bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3 sm:px-6">
           <Link to="/" className="flex items-center gap-2">
             <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
               <Aperture className="size-5" />
@@ -49,9 +69,6 @@ export function Shell({ children }: { children: ReactNode }) {
           </Link>
           <div className="ml-auto flex items-center gap-2">
             <StatusBadge />
-            <span className="hidden h-11 items-center rounded-full bg-secondary px-4 text-sm font-semibold text-secondary-foreground sm:flex">
-              {ROLE_LABEL[role]}
-            </span>
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
@@ -59,32 +76,68 @@ export function Shell({ children }: { children: ReactNode }) {
             >
               {theme === "light" ? <Moon className="size-4" /> : <Sun className="size-4" />}
             </button>
-            {session && (
-              <button
-                onClick={() => void signOut()}
-                aria-label="Sign out"
+            {session ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  aria-label="Profile"
+                  className="grid size-11 place-items-center rounded-full bg-foreground text-sm font-extrabold uppercase text-background"
+                >
+                  {(session.user.email ?? "?").charAt(0)}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-60 rounded-2xl p-2">
+                  <DropdownMenuLabel>
+                    <span className="block truncate text-sm">{session.user.email}</span>
+                    <span className="block text-xs font-medium text-muted-foreground">
+                      {ROLE_LABEL[role]}
+                    </span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => void signOut()} className="h-11 rounded-xl">
+                    <LogOut className="size-4" /> Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link
+                to="/auth"
+                aria-label="Sign in"
                 className="grid size-11 place-items-center rounded-full border border-border bg-card"
               >
-                <LogOut className="size-4" />
-              </button>
+                <UserRound className="size-4" />
+              </Link>
             )}
           </div>
-          <nav className="flex w-full gap-2 overflow-x-auto pb-1">
-            {TABS.map((t) => (
-              <Link
-                key={t.to}
-                to={t.to}
-                activeOptions={{ exact: t.to === "/" }}
-                className="flex h-11 items-center rounded-full px-5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary"
-                activeProps={{ className: "bg-foreground text-background hover:bg-foreground" }}
-              >
-                {t.label}
-              </Link>
-            ))}
-          </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 pb-24 pt-6 sm:px-6">{children}</main>
+      <main className="mx-auto max-w-5xl px-4 pb-36 pt-6 sm:px-6">{children}</main>
+
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/80 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
+        <div className="mx-auto grid max-w-xl grid-cols-3 gap-1 px-3 py-2">
+          {TABS.map(({ to, label, icon: Icon }) => (
+            <Link
+              key={to}
+              to={to}
+              activeOptions={{ exact: to === "/" }}
+              className="group flex h-16 flex-col items-center justify-center gap-1 rounded-2xl text-xs font-bold text-muted-foreground transition-colors"
+              activeProps={{ className: "text-foreground" }}
+            >
+              {({ isActive }) => (
+                <>
+                  <span
+                    className={cn(
+                      "grid h-8 w-14 place-items-center rounded-full transition-colors",
+                      isActive && "bg-primary text-primary-foreground",
+                    )}
+                  >
+                    <Icon className="size-5" />
+                  </span>
+                  {label}
+                </>
+              )}
+            </Link>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 }

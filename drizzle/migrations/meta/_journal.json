@@ -8,6 +8,13 @@
       "when": 1790001839341,
       "tag": "0000_asmolog_core",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790318908862,
+      "tag": "0001_metadata_presets",
+      "breakpoints": true
     }
   ]
 }
