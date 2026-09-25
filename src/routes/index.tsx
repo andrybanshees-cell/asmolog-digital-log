@@ -6,10 +6,15 @@ import { toast } from "sonner";
 import { Shell, Field, inputCls } from "@/components/Shell";
 import { TagSheet } from "@/components/TagSheet";
 import {
+  GlobalPresetsManager,
+  LoadPresetButton,
+  SavePresetButton,
+  useGlobalValues,
+} from "@/components/PresetsPanel";
+import {
   db,
   newProject,
   META_FIELDS,
-  META_PRESETS,
   type MetaKey,
   type MediaType,
   type Project,
@@ -49,6 +54,7 @@ function Projects() {
   const { session, role, activeProjectId, setActiveProjectId, refreshPending, sync } = useApp();
   const editable = canEdit(role);
   const projects = useLiveQuery(() => db.projects.toArray(), []) ?? [];
+  const globals = useGlobalValues();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [sheet, setSheet] = useState<MetaKey | null>(null);
 
@@ -222,18 +228,35 @@ function Projects() {
                 </div>
 
                 {editable && (
-                  <button
-                    onClick={() => void remove(p)}
-                    className="flex h-12 items-center gap-2 rounded-full border border-border px-5 text-sm font-bold text-destructive"
-                  >
-                    <Trash2 className="size-4" /> Delete project
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <LoadPresetButton
+                      onLoad={(vals, name) => {
+                        const patch = Object.fromEntries(
+                          META_FIELDS.map((f) => [
+                            f.key,
+                            Array.from(new Set([...p[f.key], ...vals[f.key]])),
+                          ]),
+                        ) as Partial<Project>;
+                        void save(patch, p);
+                        toast.success(`Loaded “${name}”`);
+                      }}
+                    />
+                    <SavePresetButton project={p} />
+                    <button
+                      onClick={() => void remove(p)}
+                      className="flex h-12 items-center gap-2 rounded-full border border-border px-5 text-sm font-bold text-destructive"
+                    >
+                      <Trash2 className="size-4" /> Delete project
+                    </button>
+                  </div>
                 )}
               </div>
             )}
           </div>
         ))}
       </div>
+
+      <GlobalPresetsManager editable={editable} />
 
       {sheet && active && (
         <TagSheet
@@ -242,7 +265,7 @@ function Projects() {
           title={META_FIELDS.find((f) => f.key === sheet)!.label}
           hint={META_FIELDS.find((f) => f.key === sheet)!.hint}
           values={active[sheet]}
-          presets={META_PRESETS[sheet]}
+          presets={globals[sheet]}
           readOnly={!editable}
           onChange={(next) => void save({ [sheet]: next } as Partial<Project>, active)}
         />
