@@ -40,6 +40,9 @@ export interface Take {
   take: number;
   camera_roll: string;
   sound_roll: string;
+  clip: string;
+  slate: string;
+  card: string;
   lens: string;
   filter: string;
   character_name: string;
@@ -70,6 +73,8 @@ export interface Preset {
   aspect_ratios: string[];
   formats: string[];
   resolutions: string[];
+  base_isos: string[];
+  eis: string[];
   created_at: string;
   updated_at: string;
   sync: SyncState;
@@ -91,6 +96,29 @@ class AsmologDB extends Dexie {
       takes: "id, project_id, scene, shot, good_take, camera_roll, logged_at, sync",
       presets: "id, name, updated_at, sync",
     });
+    this.version(3)
+      .stores({
+        projects: "id, updated_at, sync",
+        takes: "id, project_id, scene, shot, good_take, camera_roll, logged_at, sync",
+        presets: "id, name, updated_at, sync",
+      })
+      .upgrade(async (tx) => {
+        await tx.table("projects").toCollection().modify((p: Record<string, unknown>) => {
+          for (const k of ["location", "shoot_date", "production_company", "director", "dp", "first_ac", "second_ac"])
+            p[k] ??= "";
+          p.base_isos ??= [];
+          p.eis ??= [];
+        });
+        await tx.table("presets").toCollection().modify((p: Record<string, unknown>) => {
+          p.base_isos ??= [];
+          p.eis ??= [];
+        });
+        await tx.table("takes").toCollection().modify((t: Record<string, unknown>) => {
+          t.clip ??= "";
+          t.slate ??= "";
+          t.card ??= "";
+        });
+      });
   }
 }
 
