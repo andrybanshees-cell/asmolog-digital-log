@@ -4,6 +4,7 @@ import { Trash2, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { inputCls } from "./Shell";
 import { useApp } from "@/lib/app-context";
+import { syncNow } from "@/lib/sync";
 import type { Project } from "@/lib/db";
 import {
   inviteMember,
@@ -19,7 +20,7 @@ import { cn } from "@/lib/utils";
 const ROLES: ProjectRole[] = ["admin", "editor", "viewer"];
 
 export function TeamSection({ project, isAdmin }: { project: Project; isAdmin: boolean }) {
-  const { session, status, sync } = useApp();
+  const { session, status } = useApp();
   const [members, setMembers] = useState<Member[]>([]);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<ProjectRole>("editor");
@@ -48,7 +49,7 @@ export function TeamSection({ project, isAdmin }: { project: Project; isAdmin: b
     setBusy(true);
     try {
       // Make sure the project exists in the cloud before adding members.
-      await sync();
+      await syncNow();
       await inviteMember(project.id, email, role, session.user.id);
       setEmail("");
       toast.success("Invite added — they'll see this project after signing in with that email");
