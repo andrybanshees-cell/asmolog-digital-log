@@ -45,7 +45,10 @@ export function TeamSection({ project, isAdmin }: { project: Project; isAdmin: b
   }
 
   const invite = async () => {
-    if (!/^\S+@\S+\.\S+$/.test(email)) return toast.error("Enter a valid email");
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      toast.error("Enter a valid email");
+      return;
+    }
     setBusy(true);
     try {
       // Make sure the project exists in the cloud before adding members.

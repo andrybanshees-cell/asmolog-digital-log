@@ -22,7 +22,8 @@ export function normalizeProject(r: Record<string, unknown>): Project {
   } as Project;
 }
 export function normalizeTake(r: Record<string, unknown>): Take {
-  return { clip: "", slate: "", card: "", ...(r as unknown as Take), sync: "synced" };
+  const t = r as unknown as Take;
+  return { ...t, clip: t.clip ?? "", slate: t.slate ?? "", card: t.card ?? "", sync: "synced" };
 }
 
 function toRemoteProject(p: Project, userId: string) {
