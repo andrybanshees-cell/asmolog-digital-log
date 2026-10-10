@@ -2,8 +2,6 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { pendingCount, subscribeTakes, syncNow, type SyncStatus } from "./sync";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "./db";
 
 export type Role = "admin" | "dit" | "viewer";
 
