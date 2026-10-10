@@ -106,17 +106,17 @@ class AsmologDB extends Dexie {
         await tx.table("projects").toCollection().modify((p: Record<string, unknown>) => {
           for (const k of ["location", "shoot_date", "production_company", "director", "dp", "first_ac", "second_ac"])
             p[k] ??= "";
-          p.base_isos ??= [];
-          p.eis ??= [];
+          p['base_isos'] ??= [];
+          p['eis'] ??= [];
         });
         await tx.table("presets").toCollection().modify((p: Record<string, unknown>) => {
-          p.base_isos ??= [];
-          p.eis ??= [];
+          p['base_isos'] ??= [];
+          p['eis'] ??= [];
         });
         await tx.table("takes").toCollection().modify((t: Record<string, unknown>) => {
-          t.clip ??= "";
-          t.slate ??= "";
-          t.card ??= "";
+          t['clip'] ??= "";
+          t['slate'] ??= "";
+          t['card'] ??= "";
         });
       });
   }

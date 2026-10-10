@@ -176,6 +176,8 @@ export function GlobalPresetsManager({ editable }: { editable: boolean }) {
       aspect_ratios: [],
       formats: [],
       resolutions: [],
+      base_isos: [],
+      eis: [],
       created_at: now,
       updated_at: now,
       sync: "pending",
