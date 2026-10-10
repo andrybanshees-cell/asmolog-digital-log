@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { db, type Preset, type Project, type Take } from "./db";
+import { db, META_FIELDS, PROJECT_TEXT_DEFAULTS, type Preset, type Project, type Take } from "./db";
 
 export type SyncStatus = "offline" | "online" | "syncing";
 
@@ -10,18 +10,32 @@ const chunks = <T,>(arr: T[]) => {
   return out;
 };
 const arr = (v: unknown) => (Array.isArray(v) ? (v as string[]) : []);
+const metaArrays = (r: Record<string, unknown>) =>
+  Object.fromEntries(META_FIELDS.map((f) => [f.key, arr(r[f.key])]));
 
-function toRemoteProject(p: Project, ownerId: string) {
+export function normalizeProject(r: Record<string, unknown>): Project {
+  return {
+    ...PROJECT_TEXT_DEFAULTS,
+    ...(r as unknown as Project),
+    ...metaArrays(r),
+    sync: "synced",
+  } as Project;
+}
+export function normalizeTake(r: Record<string, unknown>): Take {
+  return { clip: "", slate: "", card: "", ...(r as unknown as Take), sync: "synced" };
+}
+
+function toRemoteProject(p: Project, userId: string) {
   const { sync: _s, deleted: _d, ...rest } = p;
-  return { ...rest, owner_id: ownerId };
+  return { ...rest, owner_id: p.owner_id ?? userId };
 }
-function toRemoteTake(t: Take, ownerId: string) {
+function toRemoteTake(t: Take, userId: string) {
   const { sync: _s, ...rest } = t;
-  return { ...rest, owner_id: ownerId };
+  return { ...rest, owner_id: t.owner_id ?? userId };
 }
-function toRemotePreset(p: Preset, ownerId: string) {
+function toRemotePreset(p: Preset, userId: string) {
   const { sync: _s, ...rest } = p;
-  return { ...rest, owner_id: ownerId };
+  return { ...rest, owner_id: userId };
 }
 
 export async function pendingCount() {
@@ -33,7 +47,6 @@ export async function pendingCount() {
   return p + t + s;
 }
 
-/** Merge remote rows into a local table with one bulkGet + one bulkPut. */
 async function mergeDown<L extends { id: string; updated_at: string; sync: string }>(
   table: import("dexie").Table<L, string>,
   remote: L[],
@@ -48,39 +61,48 @@ async function mergeDown<L extends { id: string; updated_at: string; sync: strin
   return writes.length;
 }
 
-/** Batched push of pending records, then batched pull. Projects first (takes FK). */
+/** Push one table in batches; a rejected batch stays pending instead of blocking the rest. */
+async function pushBatches<T extends { owner_id: string | null }>(
+  rows: T[],
+  table: "projects" | "takes" | "metadata_presets",
+  toRemote: (r: T) => Record<string, unknown>,
+  markSynced: (rows: T[]) => Promise<unknown>,
+) {
+  let n = 0;
+  for (const c of chunks(rows)) {
+    const { error } = await supabase.from(table).upsert(c.map(toRemote) as never);
+    if (error) {
+      console.warn(`sync ${table} batch rejected`, error.message);
+      continue;
+    }
+    await markSynced(c);
+    n += c.length;
+  }
+  return n;
+}
+
+/** Batched push of pending records, then batched pull. Projects first (takes reference them). */
 export async function syncNow(): Promise<{ pushed: number; pulled: number }> {
   const { data } = await supabase.auth.getSession();
   const userId = data.session?.user.id;
   if (!userId) return { pushed: 0, pulled: 0 };
 
-  let pushed = 0;
   const [projects, presets, takes] = await Promise.all([
     db.projects.where("sync").equals("pending").toArray(),
     db.presets.where("sync").equals("pending").toArray(),
     db.takes.where("sync").equals("pending").toArray(),
   ]);
 
-  for (const c of chunks(projects)) {
-    const { error } = await supabase.from("projects").upsert(c.map((p) => toRemoteProject(p, userId)));
-    if (error) throw error;
-    await db.projects.bulkPut(c.map((p) => ({ ...p, owner_id: userId, sync: "synced" as const })));
-    pushed += c.length;
-  }
-  for (const c of chunks(presets)) {
-    const { error } = await supabase
-      .from("metadata_presets")
-      .upsert(c.map((p) => toRemotePreset(p, userId)));
-    if (error) throw error;
-    await db.presets.bulkPut(c.map((p) => ({ ...p, owner_id: userId, sync: "synced" as const })));
-    pushed += c.length;
-  }
-  for (const c of chunks(takes)) {
-    const { error } = await supabase.from("takes").upsert(c.map((t) => toRemoteTake(t, userId)));
-    if (error) throw error;
-    await db.takes.bulkPut(c.map((t) => ({ ...t, owner_id: userId, sync: "synced" as const })));
-    pushed += c.length;
-  }
+  let pushed = 0;
+  pushed += await pushBatches(projects, "projects", (p) => toRemoteProject(p, userId), (c) =>
+    db.projects.bulkPut(c.map((p) => ({ ...p, owner_id: p.owner_id ?? userId, sync: "synced" as const }))),
+  );
+  pushed += await pushBatches(presets, "metadata_presets", (p) => toRemotePreset(p, userId), (c) =>
+    db.presets.bulkPut(c.map((p) => ({ ...p, owner_id: userId, sync: "synced" as const }))),
+  );
+  pushed += await pushBatches(takes, "takes", (t) => toRemoteTake(t, userId), (c) =>
+    db.takes.bulkPut(c.map((t) => ({ ...t, owner_id: t.owner_id ?? userId, sync: "synced" as const }))),
+  );
 
   const [rp, rs, rt] = await Promise.all([
     supabase.from("projects").select("*"),
@@ -89,44 +111,36 @@ export async function syncNow(): Promise<{ pushed: number; pulled: number }> {
   ]);
 
   let pulled = 0;
-  pulled += await mergeDown(
-    db.projects,
-    (rp.data ?? []).map((r) => ({
-      ...(r as unknown as Project),
-      lenses: arr(r.lenses),
-      filters: arr(r.filters),
-      characters: arr(r.characters),
-      luts: arr(r.luts),
-      aspect_ratios: arr(r.aspect_ratios),
-      formats: arr(r.formats),
-      resolutions: arr(r.resolutions),
-      sync: "synced" as const,
-    })),
-  );
+  pulled += await mergeDown(db.projects, (rp.data ?? []).map((r) => normalizeProject(r)));
   pulled += await mergeDown(
     db.presets,
-    (rs.data ?? []).map((r) => ({
-      ...(r as unknown as Preset),
-      lenses: arr(r.lenses),
-      filters: arr(r.filters),
-      characters: arr(r.characters),
-      luts: arr(r.luts),
-      aspect_ratios: arr(r.aspect_ratios),
-      formats: arr(r.formats),
-      resolutions: arr(r.resolutions),
-      sync: "synced" as const,
-    })),
+    (rs.data ?? []).map((r) => ({ ...(r as unknown as Preset), ...metaArrays(r), sync: "synced" as const })),
   );
-  pulled += await mergeDown(
-    db.takes,
-    (rt.data ?? []).map((r) => ({ ...(r as unknown as Take), sync: "synced" as const })),
-  );
+  pulled += await mergeDown(db.takes, (rt.data ?? []).map((r) => normalizeTake(r)));
 
   return { pushed, pulled };
 }
 
-/** Delete a preset locally and remotely (best effort when online). */
 export async function deletePreset(id: string) {
   await db.presets.delete(id);
   if (navigator.onLine) await supabase.from("metadata_presets").delete().eq("id", id);
+}
+
+/** Live-mirror remote take changes into Dexie so viewers see new takes instantly. */
+export function subscribeTakes() {
+  const ch = supabase
+    .channel("takes-live")
+    .on("postgres_changes", { event: "*", schema: "public", table: "takes" }, async (payload) => {
+      if (payload.eventType === "DELETE") {
+        const id = (payload.old as { id?: string }).id;
+        if (id) await db.takes.delete(id);
+        return;
+      }
+      const row = normalizeTake(payload.new as Record<string, unknown>);
+      const local = await db.takes.get(row.id);
+      if (local?.sync === "pending") return;
+      await db.takes.put(row);
+    })
+    .subscribe();
+  return () => void supabase.removeChannel(ch);
 }
