@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { pendingCount, syncNow, type SyncStatus } from "./sync";
+import { pendingCount, subscribeTakes, syncNow, type SyncStatus } from "./sync";
 
 export type Role = "admin" | "dit" | "viewer";
 
@@ -93,8 +93,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const roles = data.map((r) => r.role as Role);
         setRole(roles.includes("admin") ? "admin" : roles.includes("dit") ? "dit" : "viewer");
       });
+    const unsub = subscribeTakes();
     return () => {
       cancelled = true;
+      unsub();
     };
   }, [session]);
 
