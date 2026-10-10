@@ -17,8 +17,10 @@ export type Database = {
       metadata_presets: {
         Row: {
           aspect_ratios: Json
+          base_isos: Json
           characters: Json
           created_at: string
+          eis: Json
           filters: Json
           formats: Json
           id: string
@@ -31,8 +33,10 @@ export type Database = {
         }
         Insert: {
           aspect_ratios?: Json
+          base_isos?: Json
           characters?: Json
           created_at?: string
+          eis?: Json
           filters?: Json
           formats?: Json
           id: string
@@ -45,8 +49,10 @@ export type Database = {
         }
         Update: {
           aspect_ratios?: Json
+          base_isos?: Json
           characters?: Json
           created_at?: string
+          eis?: Json
           filters?: Json
           formats?: Json
           id?: string
@@ -80,52 +86,117 @@ export type Database = {
         }
         Relationships: []
       }
+      project_members: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          invited_by: string | null
+          project_id: string
+          role: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          invited_by?: string | null
+          project_id: string
+          role?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          invited_by?: string | null
+          project_id?: string
+          role?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_members_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           aspect_ratios: Json
+          base_isos: Json
           characters: Json
           created_at: string
+          director: string
+          dp: string
+          eis: Json
           filters: Json
+          first_ac: string
           formats: Json
           id: string
           lenses: Json
+          location: string
           luts: Json
           media_type: string
           owner_id: string
+          production_company: string
           production_name: string | null
           resolutions: Json
+          second_ac: string
+          shoot_date: string
           title: string
           updated_at: string
         }
         Insert: {
           aspect_ratios?: Json
+          base_isos?: Json
           characters?: Json
           created_at?: string
+          director?: string
+          dp?: string
+          eis?: Json
           filters?: Json
+          first_ac?: string
           formats?: Json
           id: string
           lenses?: Json
+          location?: string
           luts?: Json
           media_type?: string
           owner_id: string
+          production_company?: string
           production_name?: string | null
           resolutions?: Json
+          second_ac?: string
+          shoot_date?: string
           title: string
           updated_at?: string
         }
         Update: {
           aspect_ratios?: Json
+          base_isos?: Json
           characters?: Json
           created_at?: string
+          director?: string
+          dp?: string
+          eis?: Json
           filters?: Json
+          first_ac?: string
           formats?: Json
           id?: string
           lenses?: Json
+          location?: string
           luts?: Json
           media_type?: string
           owner_id?: string
+          production_company?: string
           production_name?: string | null
           resolutions?: Json
+          second_ac?: string
+          shoot_date?: string
           title?: string
           updated_at?: string
         }
@@ -136,7 +207,9 @@ export type Database = {
           aperture: string | null
           aspect_ratio: string | null
           camera_roll: string | null
+          card: string
           character_name: string | null
+          clip: string
           filter: string | null
           format: string | null
           fps: string | null
@@ -153,6 +226,7 @@ export type Database = {
           scene: string
           shot: string
           shutter: string | null
+          slate: string
           sound_roll: string | null
           take: number
           updated_at: string
@@ -162,7 +236,9 @@ export type Database = {
           aperture?: string | null
           aspect_ratio?: string | null
           camera_roll?: string | null
+          card?: string
           character_name?: string | null
+          clip?: string
           filter?: string | null
           format?: string | null
           fps?: string | null
@@ -179,6 +255,7 @@ export type Database = {
           scene?: string
           shot?: string
           shutter?: string | null
+          slate?: string
           sound_roll?: string | null
           take?: number
           updated_at?: string
@@ -188,7 +265,9 @@ export type Database = {
           aperture?: string | null
           aspect_ratio?: string | null
           camera_roll?: string | null
+          card?: string
           character_name?: string | null
+          clip?: string
           filter?: string | null
           format?: string | null
           fps?: string | null
@@ -205,6 +284,7 @@ export type Database = {
           scene?: string
           shot?: string
           shutter?: string | null
+          slate?: string
           sound_roll?: string | null
           take?: number
           updated_at?: string
@@ -250,6 +330,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      project_role_for: { Args: { _project: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "dit" | "viewer"
